@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AppsWithContentSharing</string>
+    <string name="send_to">who do you want to send</string>
+</resources>
