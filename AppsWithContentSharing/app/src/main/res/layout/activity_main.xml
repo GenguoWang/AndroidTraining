@@ -27,5 +27,15 @@
             android:text="Set Easy Share"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
+        <Button
+            android:onClick="sendBinaryContent"
+            android:text="Send Binary Content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <Button
+            android:onClick="requestFile"
+            android:text="Request File"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
     </LinearLayout>
 </RelativeLayout>

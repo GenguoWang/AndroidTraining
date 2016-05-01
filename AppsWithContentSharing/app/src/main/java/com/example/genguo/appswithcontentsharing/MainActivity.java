@@ -2,8 +2,14 @@ package com.example.genguo.appswithcontentsharing;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
+import android.provider.OpenableColumns;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
@@ -12,13 +18,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
     private Uri imageUri0;
     private Uri imageUri1;
     private ShareActionProvider shareActionProvider;
+    private Intent requestFileIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +43,11 @@ public class MainActivity extends AppCompatActivity {
         String action = intent.getAction();
         String type = intent.getType();
         Log.d("Kingo","start by intent: "+ action + " "+type);
+        setImageUri();
+        requestFileIntent = new Intent();
+        requestFileIntent.setType("image/*");
+        requestFileIntent.setAction(Intent.ACTION_PICK);
+
         /*
          must add intent-filter in AndroidManifest.xml,
          otherwise the activity cannot be started by outside intents
@@ -45,6 +65,54 @@ public class MainActivity extends AppCompatActivity {
         } else {
             // Handle other intents, such as being started from the home screen
         }
+    }
+
+    private void setImageUri() {
+        String name = "joe.jpg";
+        Bitmap bm = BitmapFactory.decodeResource(getResources(), R.drawable.joe);
+        File imagePath = new File(getFilesDir(), "images");
+        File newFile = new File(imagePath, name);
+        if (!newFile.exists()) {
+            saveBitmapToFile(imagePath, name, bm, Bitmap.CompressFormat.JPEG, 70);
+        }
+        File requestFile = new File(imagePath, "requestFile.jpg");
+        imageUri1 = FileProvider.getUriForFile(this, "com.example.genguo.appswithcontentsharing.fileprovider", newFile);
+        if (requestFile.exists()) {
+            imageUri0 = FileProvider.getUriForFile(this, "com.example.genguo.appswithcontentsharing.fileprovider", requestFile);
+        } else{
+            imageUri0 = imageUri1;
+        }
+    }
+
+    public boolean saveBitmapToFile(File dir, String fileName, Bitmap bm,
+                                    Bitmap.CompressFormat format, int quality) {
+
+        if(!dir.exists()) {
+            dir.mkdir();
+        }
+        File imageFile = new File(dir,fileName);
+
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(imageFile);
+
+            bm.compress(format,quality,fos);
+
+            fos.close();
+
+            return true;
+        }
+        catch (IOException e) {
+            Log.e("Kingo",e.getMessage());
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -83,10 +151,11 @@ public class MainActivity extends AppCompatActivity {
          */
         Intent intent = new Intent();
         intent.setAction(Intent.ACTION_SEND);
-        // todo, and content provider for the image, and make the uri
-        // or use media store.
         intent.putExtra(Intent.EXTRA_STREAM, imageUri0);
+        Log.d("Kingo","send binary: "+imageUri0);
         intent.setType("image/jpeg");
+        //intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        revokeUriPermission(imageUri0, Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(Intent.createChooser(intent, getResources().getText(R.string.send_to)));
     }
 
@@ -110,6 +179,47 @@ public class MainActivity extends AppCompatActivity {
         setShareIntent(intent);
     }
 
+    public void requestFile(View v){
+        //startActivity(requestFileIntent);
+        startActivityForResult(requestFileIntent, 0);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d("Kingo","on result");
+        if(resultCode != RESULT_OK){
+            return;
+        } else {
+            Log.d("Kingo","save on result");
+           Uri returnUri = data.getData();
+            printInfo(returnUri);
+            try {
+                File imagePath = new File(getFilesDir(), "images");
+                File newFile = new File(imagePath, "requestFile.jpg");
+                final int chunkSize = 1024;  // We'll read in one kB at a time
+                byte[] imageData = new byte[chunkSize];
+
+                    InputStream in = getContentResolver().openInputStream(returnUri);
+                    OutputStream out = new FileOutputStream(newFile);  // I'm assuming you already have the File object for where you're writing to
+
+                    int bytesRead;
+                    while ((bytesRead = in.read(imageData)) > 0) {
+                        out.write(Arrays.copyOfRange(imageData, 0, Math.max(0, bytesRead)));
+                    }
+                in.close();
+                out.close();
+                setImageUri();
+            }catch (FileNotFoundException e){
+                e.printStackTrace();
+                Log.e("Kingo", "Return file not found!");
+            }
+            catch (IOException e){
+                e.printStackTrace();
+                Log.e("Kingo", "Error!");
+            }
+        }
+    }
+
     // Call to update the share intent
     private void setShareIntent(Intent shareIntent) {
         Log.d("Kingo", "set share intent before");
@@ -117,6 +227,16 @@ public class MainActivity extends AppCompatActivity {
             Log.d("Kingo", "set share intent");
             shareActionProvider.setShareIntent(shareIntent);
         }
+    }
+
+    private void printInfo(Uri uri){
+        Cursor cursor = getContentResolver().query(uri, null, null, null,null);
+        int nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+        int sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE);
+        cursor.moveToFirst();
+        Log.d("King", " uri name: "+ cursor.getString(nameIdx));
+        Log.d("King", " uri size: "+ cursor.getLong(sizeIdx));
+        cursor.close();
     }
 
 }
