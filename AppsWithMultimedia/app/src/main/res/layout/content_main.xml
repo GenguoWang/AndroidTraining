@@ -11,9 +11,32 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.example.genguo.appswithmultimedia.MainActivity"
     tools:showIn="@layout/activity_main">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!" />
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <Button
+            android:text="Take Photo"
+            android:onClick="takePhoto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <Button
+            android:text="Capture Video"
+            android:onClick="captureVideo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <Button
+            android:text="Use Camera"
+            android:onClick="useCamera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <VideoView
+            android:id="@+id/videoView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
 </RelativeLayout>

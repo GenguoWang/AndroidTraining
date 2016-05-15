@@ -2,6 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.genguo.appswithmultimedia">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.Camera2"
+        android:required="true" />
+
+    <uses-feature
+        android:name="android.hardware.Camera"
+        android:required="true" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -18,8 +30,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".MusicService"/>
+
+        <service android:name=".MusicService" />
+
+        <activity android:name=".UseCameraAcivity"></activity>
     </application>
-    <uses-permission android:name="android.permission.INTERNET"/>
 
 </manifest>
